@@ -1,2 +1,2 @@
 # GoLancer
-Randsomeware built in Golang
+Randsomware built in Golang
