@@ -4,6 +4,7 @@ import (
 	"log"
 	"os/exec"
 	"runtime"
+	"strings"
 )
 
 type SystemInfo struct {
@@ -26,7 +27,9 @@ func getHostName() string {
 
 	if err != nil {
 		log.Fatal(err)
+		return "error"
 	}
 
+	out = []byte(strings.TrimSpace(string(out)))
 	return string(out)
 }
