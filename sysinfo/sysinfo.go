@@ -1,10 +1,11 @@
 package sysinfo
 
 import (
+	"io/fs"
 	"log"
-	"os/exec"
+	"os"
+	"path/filepath"
 	"runtime"
-	"strings"
 )
 
 type SystemInfo struct {
@@ -14,22 +15,39 @@ type SystemInfo struct {
 }
 
 func GetInfo() SystemInfo {
+	hostname, _ := os.Hostname()
 	sysInfo := SystemInfo{
 		Os:       runtime.GOOS,
 		Arch:     runtime.GOARCH,
-		Hostname: getHostName(),
+		Hostname: hostname,
 	}
 	return sysInfo
 }
 
-func getHostName() string {
-	out, err := exec.Command("hostname").Output()
+func GetFileList() []string {
+	var fileList []string
+	/*
+		rootDir, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		rootDir = filepath.Dir(rootDir)
+	*/
+	// for testing only
+	rootDir := "C:\\test"
+
+	err := filepath.WalkDir(rootDir,
+		func(path string, d fs.DirEntry, err error) error {
+			if err == nil && !d.IsDir() {
+				fileList = append(fileList, path)
+			}
+
+			return nil
+		})
 
 	if err != nil {
 		log.Fatal(err)
-		return "error"
 	}
 
-	out = []byte(strings.TrimSpace(string(out)))
-	return string(out)
+	return fileList
 }
