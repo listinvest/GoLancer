@@ -7,7 +7,11 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
+	"encoding/hex"
+	"encoding/pem"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -16,10 +20,6 @@ import (
 // Generate 2048-bit RSA keypair
 func GenerateRSA() *rsa.PrivateKey {
 	rsaKeys, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,6 +36,124 @@ func GenerateAES() []byte {
 	}
 
 	return aesBytes
+}
+
+// Save AES key to file system, hex encoded. Key can be plaintext or encrypted
+// This function is insecure, and should not be used in a live demo when testing security controls
+func SaveAESKey(aesBytes []byte, fileName string) {
+	encodedBytes := hex.EncodeToString(aesBytes)
+
+	file, err := os.Create(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(encodedBytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Read hex encoded AES key from file and return byte array. Key can be encrypted or unencrypted, but must be hex encoded
+func LoadAESKey(filename string) []byte {
+	encodedBytes, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	aesBytes, err := hex.DecodeString(string(encodedBytes))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return aesBytes
+}
+
+// Saves RSA private key to file in x509 PKCS1 format
+// This function should never be performed on the target system that is used for testing security controls
+func SaveRSAPrivateKey(privateKey rsa.PrivateKey, fileName string) {
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(&privateKey)
+
+	block := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	}
+
+	file, err := os.Create(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = pem.Encode(file, block)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+// Reads RSA key formatted in x509 PKCS1 from file and returns the key value in type 'rsa.PrivateKey'
+func LoadRSAPrivateKey(filename string) *rsa.PrivateKey {
+
+	keyBytes, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	block, _ := pem.Decode(keyBytes)
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return privateKey
+}
+
+func SaveRSAPublicKey(publicKey rsa.PublicKey, fileName string) {
+	publicKeyBytes, err := x509.MarshalPKIXPublicKey(&publicKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	block := &pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: publicKeyBytes,
+	}
+
+	file, err := os.Create(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = pem.Encode(file, block)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func LoadRSAPublicKey(fileName string) rsa.PublicKey {
+	var pubKey rsa.PublicKey
+	keyBytes, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	block, _ := pem.Decode(keyBytes)
+
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	switch pub := pub.(type) {
+	case *rsa.PublicKey:
+		pubKey = *pub
+	default:
+		log.Fatal("Unrecognized key format:")
+		log.Fatal(err)
+	}
+
+	return pubKey
 }
 
 //Encrypt the AES key with OAEP RSA public key
@@ -130,19 +248,22 @@ func DecryptFile(filename string, extension string, aeskey []byte) {
 		log.Fatal(err)
 	}
 
+	// Get file statistics, used for grabbing file size
 	fileinfo, err := infile.Stat()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Initialization vector (IV) will be read from the end of the file.
 	initvector := make([]byte, block.BlockSize())
+	// IV is at end of the file, so the original message length is shortened by the length of the IV
 	msgLen := fileinfo.Size() - int64(len(initvector))
-
+	// Read the IV from the file
 	_, err = infile.ReadAt(initvector, msgLen)
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	// Create file to write decrypted contents
 	outfile, err := os.OpenFile(strings.Trim(filename, extension), os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
 		log.Fatal(err)
