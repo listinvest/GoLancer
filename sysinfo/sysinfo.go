@@ -1,6 +1,8 @@
 package sysinfo
 
 import (
+	"bufio"
+	"fmt"
 	"io/fs"
 	"log"
 	"os"
@@ -26,17 +28,14 @@ func GetInfo() SystemInfo {
 
 func GetFileList() []string {
 	var fileList []string
-	/*
-		rootDir, err := os.UserHomeDir()
-		if err != nil {
-			log.Fatal(err)
-		}
-		rootDir = filepath.Dir(rootDir)
-	*/
-	// for testing only
-	rootDir := "C:\\test"
 
-	err := filepath.WalkDir(rootDir,
+	rootDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	rootDir = filepath.Dir(rootDir)
+
+	err = filepath.WalkDir(rootDir,
 		func(path string, d fs.DirEntry, err error) error {
 			if err == nil && !d.IsDir() {
 				fileList = append(fileList, path)
@@ -50,4 +49,38 @@ func GetFileList() []string {
 	}
 
 	return fileList
+}
+
+func SaveFileList(fileList []string, fileName string) {
+	file, err := os.Create(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	for _, files := range fileList {
+		_, err = fmt.Fprintln(file, files)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+	}
+
+}
+
+func LoadFileList(fileName string) []string {
+	var files []string
+	file, err := os.Open(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	buf := bufio.NewScanner(file)
+
+	for buf.Scan() {
+		files = append(files, buf.Text())
+	}
+
+	return files
 }
