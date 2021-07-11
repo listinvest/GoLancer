@@ -32,4 +32,8 @@ func main() {
 	fmt.Println(encryptedAES)
 	fmt.Println("Decrypted AES:")
 	fmt.Println(decryptedAES)
+	cryptutil.EncryptFile("test.txt", ".lcr", aesKey)
+	fmt.Println("Encrypted: test.txt")
+	cryptutil.DecryptFile("test.txt.lcr", ".lcr", aesKey)
+	fmt.Println("Decrypted file")
 }
