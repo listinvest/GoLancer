@@ -4,7 +4,7 @@ Ransomware PoC implementation built in Golang.<nl>
 <nl>
 - Encrypts files using 256-bit AES-CTR with random initialization vectors per file.<nl>
 - Encryption (and decryption) runs in parallel if enough logical cores are availible. List of files are split into chunks and each chunk is encrypted (or decrypted) in it's own goRoutine.<nl>
-- AES key is encrypted with 2048 OAEP RSA public key and sent to a webserver via form POST request.
+- AES key is encrypted with 2048 OAEP RSA public key and sent to a webserver via form POST request, or stored on the 'target' machine if the connection fails or no webserver is defined.
 
   
   
@@ -22,7 +22,8 @@ Ransomware PoC implementation built in Golang.<nl>
 
 <h3>Operation</h3>
 
-The 'attacker' will need a web-server setup that accepts form posts requests. GoLancer will send out a form POST request (``application/x-www-form-urlencoded``) to a defined web-address that contains the fields `hostname` and `key` . Any test web-server will work, you could even use netcat (`nc -lvnp 80`) . The 'attacker' can also use something like webhook.site to accept these requests. (Although security controls may block this site)
+If the 'attacker' has a web-server setup that accepts form posts requests GoLancer will send out a form POST request (``application/x-www-form-urlencoded``) to a defined web-address that contains the fields `hostname` and `key` . Any test web-server will work, you could even use netcat (`nc -lvnp 80`) . The 'attacker' can also use something like webhook.site to accept these requests. (Although security controls may block this site)
+Otherwise, the encrypted AES key will be stored on the target machine.
 
 On the 'attacker' machine:
 
@@ -38,7 +39,8 @@ On the 'attacker' machine:
  6. Deliver binary and `public.pem` to target machine
  7. Wait for binary to be executed on target machine (see below)
 	 1. Once the encryption has completed, a POST request will be made to the web-address defined in step 4
- 8. Grab AES key from POST request made to your web-server
+	 2. If the connection fails or no web-server is defined, then the key will be stored on the target machine as `golancer-e.key`
+ 8. Grab AES key from POST request made to your web-server, or from the target machine if no webserver was defined (or connection failed)
 	 1. Copy key to file named `golancer-e.key` (Make sure file is written with ANSI encoding)
  9. Decrypt AES key
 	 1. `./GoLancer -a ` (Make sure the file is in the same directory as GoLancer binary)
