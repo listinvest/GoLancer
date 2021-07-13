@@ -37,7 +37,8 @@ func GetFileList() []string {
 
 	err = filepath.WalkDir(rootDir,
 		func(path string, d fs.DirEntry, err error) error {
-			if err == nil && !d.IsDir() {
+			if err == nil && !d.IsDir() && d.Type() != os.ModeSymlink {
+
 				fileList = append(fileList, path)
 			}
 

