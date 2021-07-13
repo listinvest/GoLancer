@@ -89,6 +89,11 @@ func main() {
 		cryptutil.SaveAESKey(aesKey, "golancer.key")
 	}
 
+	// Print help message if no arguments are provided
+	if len(os.Args) == 1 {
+		flag.PrintDefaults()
+	}
+
 }
 
 // Start goRoutines that either encrypt or decrypt files contained within the file list.
