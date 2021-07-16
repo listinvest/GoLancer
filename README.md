@@ -16,9 +16,9 @@ Ransomware PoC implementation built in Golang.<nl>
 
 `-kill` : Starts the encryption process, crawls user directories and encrypts (and deletes) all files
 
-`-d` : Starts the decryption process. The private key must be in the same directory as the GoLancer binary. Will decrypt files, then remove the encrypted files.
+`-d` : Starts the decryption process. The decrypted AES key must be in the same directory as the GoLancer binary. Will decrypt files, then remove the encrypted files.
 
-`-a` : Decrypts AES key using RSA public key.
+`-a` : Decrypts AES key using RSA private key.
 
 <h3>Operation</h3>
 
